@@ -12,13 +12,22 @@ namespace Simplement.DI.CoreLib
         private readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
         private readonly Dictionary<Scope, Dictionary<Type, object>> _scopedInstances = new Dictionary<Scope, Dictionary<Type, object>>();
         
+        public IEnumerable<Type> SingletonTypes => _registeredDependancies.Keys
+                                            .Where(x => _registeredDependancies[x] == DependancyLifetime.SINGLTON)
+                                            .ToArray();
+        public IEnumerable<Type> ScopedTypes => _registeredDependancies.Keys
+                                            .Where(x => _registeredDependancies[x] == DependancyLifetime.SCOPED)
+                                            .ToArray();
+        public IEnumerable<Type> TransientTypes => _registeredDependancies.Keys
+                                            .Where(x => _registeredDependancies[x] == DependancyLifetime.TRANSIENT)
+                                            .ToArray();
         internal Container(Dictionary<Type, DependancyLifetime> registeredDependies, Dictionary<Type, Func<object>> constructors)
         {
             _registeredDependancies = registeredDependies;
             _constructors = constructors;
         }
 
-        internal object Request(Type type, Scope? scope)
+        internal object Request(Type type, Scope? scope = null)
         {
 
             if (!_registeredDependancies.TryGetValue(type, out DependancyLifetime lifetime))
@@ -81,12 +90,31 @@ namespace Simplement.DI.CoreLib
         }
         public T Request<T>()
         {
-            return (T)Request(typeof(T), null);
+            return (T)Request(typeof(T));
         }
 
         public T Request<T>(Scope scope)
         {         
             return (T)Request(typeof(T), scope);
+        }
+
+        public Scope CreateScope ()
+        {
+            List<Type> scopedTypes = _registeredDependancies.Keys
+                                            .Where(x => _registeredDependancies[x] == DependancyLifetime.SCOPED)
+                                            .ToList();
+            return new Scope(this, scopedTypes);
+        }
+
+        internal void RemoveScope (Scope scope)
+        {
+            foreach (var instance in _scopedInstances[scope].Values)
+            {
+                IDisposable? disposable = instance as IDisposable;
+                disposable?.Dispose();
+            }
+            
+            _scopedInstances.Remove(scope);
         }
     }
 
