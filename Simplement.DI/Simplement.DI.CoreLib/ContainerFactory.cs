@@ -13,15 +13,11 @@ namespace Simplement.DI.CoreLib
             return new ContainerBuilder();
         }
 
-        public static ContainerBuilder CreateBuilder(ContainerConfiguration configuration)
+        public static ContainerBuilder CreateBuilder(Action<ContainerBuilder> configure)
         {
-            return new ContainerBuilder(configuration);
-        }
-        public static ContainerBuilder CreateBuilder(Action<ContainerConfiguration> configure)
-        {
-            ContainerConfiguration configuration = new ContainerConfiguration();
-            configure(configuration);
-            return new ContainerBuilder(configuration);
+            ContainerBuilder builder = new ContainerBuilder();
+            configure(builder);
+            return builder;
         }
 
 

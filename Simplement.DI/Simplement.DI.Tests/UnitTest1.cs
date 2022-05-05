@@ -6,20 +6,24 @@ namespace Simplement.DI.Tests
 {
     public class UnitTest1
     {
+        
+        
         [Fact]
-        public void Test1()
+        public void test0()
         {
-            Assert.Throws<NotImplementedException>(() =>
-               {
-                   Container container = ContainerFactory.CreateBuilder(configuration =>
-                   {
-                       configuration.RegisterScoped<string>()
-                                   .RegisterScoped<object>()
-                                   .RegisterScoped<Int32>();
-                   }).Build();
-               }
-            );
-            
+            Type t = typeof(int);
+            Assert.True(t.IsValueType);
+        }
+
+        [Fact]
+        public void ContainerSanityCheck()
+        {
+            Container container = ContainerFactory.CreateBuilder(builder =>
+            {
+                builder.RegisterTransient<string>();
+            }).Build(); 
+
+            Assert.Null(container.Request<string>());
         }
     }
 }

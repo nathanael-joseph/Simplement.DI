@@ -6,8 +6,8 @@ namespace Simplement.DI.CoreLib
     public class Container
     {
         private readonly Dictionary<Type, DependancyLifetime> _registeredDependancies;
-        private readonly Dictionary<Type, Func<object>> _constructors;
 
+        private readonly Dictionary<Type, Func<Scope?, object>> _constructors = new Dictionary<Type, Func<Scope?, object>>();
         private readonly Dictionary<Type, object> _singletonLocks = new Dictionary<Type, object>();
         private readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
         private readonly Dictionary<Scope, Dictionary<Type, object>> _scopedInstances = new Dictionary<Scope, Dictionary<Type, object>>();
@@ -21,10 +21,13 @@ namespace Simplement.DI.CoreLib
         public IEnumerable<Type> TransientTypes => _registeredDependancies.Keys
                                             .Where(x => _registeredDependancies[x] == DependancyLifetime.TRANSIENT)
                                             .ToArray();
-        internal Container(Dictionary<Type, DependancyLifetime> registeredDependies, Dictionary<Type, Func<object>> constructors)
+        internal Container(Dictionary<Type, DependancyLifetime> registeredDependies, Dictionary<Type, Func<Container, Scope?, object>> constructors)
         {
             _registeredDependancies = registeredDependies;
-            _constructors = constructors;
+            foreach (Type type in constructors.Keys)
+            {
+                _constructors[type] = (scope) => constructors[type](this, scope);
+            }
         }
 
         internal object Request(Type type, Scope? scope = null)
@@ -40,7 +43,7 @@ namespace Simplement.DI.CoreLib
             switch (lifetime)
             {
                 case DependancyLifetime.TRANSIENT:
-                    instance = _constructors[type]();
+                    instance = _constructors[type](scope);
                     break;
                 case DependancyLifetime.SCOPED:
                     if(scope == null)
@@ -58,7 +61,7 @@ namespace Simplement.DI.CoreLib
                         {
                             if (!instances.ContainsKey(type))
                             {
-                                instance = _constructors[type]();
+                                instance = _constructors[type](scope);
                                 instances[type] = instance;
                             }
                             else
@@ -74,7 +77,7 @@ namespace Simplement.DI.CoreLib
                     {
                         if (!_singletons.ContainsKey(type))
                         {
-                            instance = _constructors[type]();
+                            instance = _constructors[type](scope);
                             _singletons[type] = instance;
                         }
                         else
