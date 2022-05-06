@@ -9,8 +9,8 @@ namespace Simplement.DI.CoreLib
 
         private readonly Dictionary<Type, Func<Scope?, object?>> _constructors = new Dictionary<Type, Func<Scope?, object?>>();
         private readonly Dictionary<Type, object> _singletonLocks = new Dictionary<Type, object>();
-        private readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
-        private readonly Dictionary<Scope, Dictionary<Type, object>> _scopedInstances = new Dictionary<Scope, Dictionary<Type, object>>();
+        private readonly Dictionary<Type, object?> _singletons = new Dictionary<Type, object?>();
+        private readonly Dictionary<Scope, Dictionary<Type, object?>> _scopedInstances = new Dictionary<Scope, Dictionary<Type, object?>>();
         
         public IEnumerable<Type> SingletonTypes => _registeredDependancies.Keys
                                             .Where(x => _registeredDependancies[x] == DependancyLifetime.SINGLTON)
@@ -92,14 +92,14 @@ namespace Simplement.DI.CoreLib
 
             return instance;
         }
-        public T? Request<T>()
+        public T Request<T>()
         {
-            return (T?)Request(typeof(T));
+            return (T)Request(typeof(T));
         }
 
-        public T? Request<T>(Scope scope)
+        public T Request<T>(Scope scope)
         {         
-            return (T?)Request(typeof(T), scope);
+            return (T)Request(typeof(T), scope);
         }
 
         public Scope CreateScope ()

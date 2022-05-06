@@ -11,7 +11,7 @@ Container container = ContainerFactory.CreateBuilder(builder =>
     builder.RegisterTransient<Stub>(() => new Stub());
 }).Build();
 
-const int AMOUNT = 10000;
+const int AMOUNT = 100000;
 
 Stub[] stubs = new Stub[AMOUNT];
 
@@ -46,6 +46,30 @@ for (int i = 0; i < stubs.Length; i++)
 }
 stopwatch.Stop();
 Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} stubs with new() ...");
+
+stopwatch.Restart();
+for (int i = 0; i < stubs.Length; i++)
+{
+    stubs[i] = container.Request<Stub>();
+}
+stopwatch.Stop();
+Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} stubs with container.Request<Stub>() ...");
+
+stopwatch.Restart();
+for (int i = 0; i < stubs.Length; i++)
+{
+    stubs[i] = container.Request<Stub>();
+}
+stopwatch.Stop();
+Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} stubs with container.Request<Stub>() ...");
+
+stopwatch.Restart();
+for (int i = 0; i < stubs.Length; i++)
+{
+    stubs[i] = container.Request<Stub>();
+}
+stopwatch.Stop();
+Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} stubs with container.Request<Stub>() ...");
 
 stopwatch.Restart();
 for (int i = 0; i < stubs.Length; i++)
