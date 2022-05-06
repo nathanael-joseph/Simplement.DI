@@ -11,10 +11,8 @@ namespace Simplement.DI.CoreLib
 {
     public class ContainerBuilder
     {
-        private readonly Dictionary<Type, Func<Container, Scope?, object>> _constructors = new Dictionary<Type, Func<Container, Scope?, object>>();
-
+        private readonly Dictionary<Type, Func<Container, Scope?, object?>> _constructors = new Dictionary<Type, Func<Container, Scope?, object?>>();
         private readonly Dictionary<Type, DependancyLifetime> _registeredDependancies = new Dictionary<Type, DependancyLifetime>();
-
 
         public ContainerBuilder RegisterSingleton<I, T>()
         {
@@ -80,7 +78,7 @@ namespace Simplement.DI.CoreLib
                 }
                 else
                 {
-                    Func<Container, Scope?, object> _constructor = CreateConstructor<T>();
+                    Func<Container, Scope?, object?> _constructor = CreateConstructor<T>();
                     _constructors[type] = _constructor;
                 }
 
@@ -90,15 +88,19 @@ namespace Simplement.DI.CoreLib
             throw new DuplicateDependencyException(type);
         }
 
-        private Func<Container, Scope?, object> CreateConstructor<T>()
+        private Func<Container, Scope?, object?> CreateConstructor<T>()
         {
             Type type = typeof(T);
-            Func<Container, Scope?, object> constructor;
+            Func<Container, Scope?, object?> constructor;
             ConstructorInfo[] constructorInfos = type.GetConstructors();
 
-            if (type.IsValueType || type == typeof(string))
+            if (type.IsValueType)
+            {                
+                constructor = (container, scope) => Activator.CreateInstance(type);
+            }
+            else if (type == typeof(string))
             {
-                constructor = (container, scope) => default;
+                constructor = (container, scope) => null;
             }
             else if (constructorInfos.Length == 0)
             {

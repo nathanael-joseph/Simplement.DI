@@ -7,7 +7,7 @@ namespace Simplement.DI.CoreLib
     {
         private readonly Dictionary<Type, DependancyLifetime> _registeredDependancies;
 
-        private readonly Dictionary<Type, Func<Scope?, object>> _constructors = new Dictionary<Type, Func<Scope?, object>>();
+        private readonly Dictionary<Type, Func<Scope?, object?>> _constructors = new Dictionary<Type, Func<Scope?, object?>>();
         private readonly Dictionary<Type, object> _singletonLocks = new Dictionary<Type, object>();
         private readonly Dictionary<Type, object> _singletons = new Dictionary<Type, object>();
         private readonly Dictionary<Scope, Dictionary<Type, object>> _scopedInstances = new Dictionary<Scope, Dictionary<Type, object>>();
@@ -21,7 +21,7 @@ namespace Simplement.DI.CoreLib
         public IEnumerable<Type> TransientTypes => _registeredDependancies.Keys
                                             .Where(x => _registeredDependancies[x] == DependancyLifetime.TRANSIENT)
                                             .ToArray();
-        internal Container(Dictionary<Type, DependancyLifetime> registeredDependies, Dictionary<Type, Func<Container, Scope?, object>> constructors)
+        internal Container(Dictionary<Type, DependancyLifetime> registeredDependies, Dictionary<Type, Func<Container, Scope?, object?>> constructors)
         {
             _registeredDependancies = registeredDependies;
             foreach (Type type in constructors.Keys)
@@ -31,7 +31,7 @@ namespace Simplement.DI.CoreLib
             
         }
 
-        internal object Request(Type type, Scope? scope = null)
+        internal object? Request(Type type, Scope? scope = null)
         {
 
             if (!_registeredDependancies.TryGetValue(type, out DependancyLifetime lifetime))
@@ -39,7 +39,7 @@ namespace Simplement.DI.CoreLib
                 throw new UknownDependancyException(type);
             }
 
-            object instance;
+            object? instance;
             
             switch (lifetime)
             {
@@ -92,14 +92,14 @@ namespace Simplement.DI.CoreLib
 
             return instance;
         }
-        public T Request<T>()
+        public T? Request<T>()
         {
-            return (T)Request(typeof(T));
+            return (T?)Request(typeof(T));
         }
 
-        public T Request<T>(Scope scope)
+        public T? Request<T>(Scope scope)
         {         
-            return (T)Request(typeof(T), scope);
+            return (T?)Request(typeof(T), scope);
         }
 
         public Scope CreateScope ()
