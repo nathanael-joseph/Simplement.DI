@@ -4,10 +4,12 @@ using Simplement.DI.CoreLib.Exceptions;
 
 namespace Simplement.DI.CoreLib
 {
-    public class Container
+    public class Container : IDisposable
     {
         private readonly Dictionary<Type, DependencyBase> _containerDictionary;
+        private bool _disposed;
         public bool IsScoped { get; private set; }
+
         internal Container(Dictionary<Type, DependencyBase> containerDictionary)
         {
             _containerDictionary = containerDictionary;
@@ -35,5 +37,52 @@ namespace Simplement.DI.CoreLib
             return (T)Request(typeof(T));
         }
 
+        public Container CreateScope()
+        {
+            Dictionary<Type, DependencyBase> containerDictionary = new Dictionary<Type, DependencyBase>(_containerDictionary.Count);
+            
+            foreach(var kvp in _containerDictionary)
+            {
+                if (kvp.Value.Lifetime == DependencyLifetime.SCOPED)
+                {
+                    containerDictionary.Add(kvp.Key, new ScopedDependency(kvp.Value.Constructor));
+                }
+                else
+                {
+                    containerDictionary.Add(kvp.Key, kvp.Value);
+                }
+            }
+
+            Container scopedContainer = new Container(containerDictionary);
+            scopedContainer.IsScoped = true;
+
+            return scopedContainer;
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    foreach(DependencyBase dependency in _containerDictionary.Values)
+                    {
+                        
+                        if(!IsScoped || dependency.Lifetime == DependencyLifetime.SCOPED)
+                        {
+                            IDisposable? disposable = dependency as IDisposable;
+                            disposable?.Dispose();
+                        }
+                    }
+                }
+
+                _disposed = true;
+            }
+        }
     }
 }

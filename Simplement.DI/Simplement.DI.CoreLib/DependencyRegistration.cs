@@ -3,7 +3,7 @@ using Simplement.DI.CoreLib.Enums;
 
 namespace Simplement.DI.CoreLib
 {
-    internal  class DependencyRegistration
+    internal class DependencyRegistration
     {
         internal Type DependancyType { get; set; }
         internal Type ImplementationType { get; set; }
