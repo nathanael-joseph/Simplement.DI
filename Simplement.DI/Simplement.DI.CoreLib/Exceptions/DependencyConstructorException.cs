@@ -3,7 +3,7 @@
     public class DependencyConstructorException : InvalidOperationException
     {
         public DependencyConstructorException(Type t)
-            : base($"No public construcot for the dependency {t.Name} could be found.")
+            : base($"No public constructor for the dependency {t.Name} could be found.")
         { }
     }
 }

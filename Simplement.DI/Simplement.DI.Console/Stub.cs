@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Simplement.DI.Console
 {
-    internal class Stub
+    public class Stub
     {
         public string Name { get; set; }
         public int Age { get; set; }
@@ -15,6 +15,19 @@ namespace Simplement.DI.Console
         {
             Name = "Stub";
             Age = 0;
+        }
+    }
+
+    public class DependantStup
+    {
+        private int _x;
+        private Stub _stub;
+
+
+        public DependantStup(Stub stub, int x)
+        {
+            _stub = stub;
+            _x = x;
         }
     }
 }

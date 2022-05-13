@@ -1,4 +1,5 @@
-﻿using Simplement.DI.CoreLib.Enums;
+﻿using Simplement.DI.CoreLib.Dependencies;
+using Simplement.DI.CoreLib.Enums;
 using Simplement.DI.CoreLib.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -11,100 +12,82 @@ namespace Simplement.DI.CoreLib
 {
     public class ContainerBuilder
     {
-        private readonly Dictionary<Type, Func<Container, Scope?, object?>> _constructors = new Dictionary<Type, Func<Container, Scope?, object?>>();
-        private readonly Dictionary<Type, DependancyLifetime> _registeredDependancies = new Dictionary<Type, DependancyLifetime>();
+        private readonly ContainerConfiguration _containerConfiguration;
 
-        public ContainerBuilder RegisterSingleton<I, T>()
+        public ContainerBuilder(ContainerConfiguration configuration) 
         {
-            return RegisterDependancy<I, T>(DependancyLifetime.SINGLTON);
-        }
-        public ContainerBuilder RegisterSingleton<I, T>(Func<T> constructor)
-        {
-            return RegisterDependancy<I, T>(DependancyLifetime.SINGLTON, constructor);
-        }
-        public ContainerBuilder RegisterSingleton<T>()
-        {
-            return RegisterDependancy<T, T>(DependancyLifetime.SINGLTON);
-        }
-        public ContainerBuilder RegisterSingleton<T>(Func<T> constructor)
-        {
-            return RegisterDependancy<T, T>(DependancyLifetime.SINGLTON, constructor);
+            _containerConfiguration = configuration;
         }
 
-        public ContainerBuilder RegisterScoped<I, T>()
+        private Dictionary<Type, DependencyBase> BuildContainerDictionary()
         {
-            return RegisterDependancy<I, T>(DependancyLifetime.SCOPED);
-        }
-        public ContainerBuilder RegisterScoped<I, T>(Func<T> constructor)
-        {
-            return RegisterDependancy<I, T>(DependancyLifetime.SCOPED, constructor);
-        }
-        public ContainerBuilder RegisterScoped<T>()
-        {
-            return RegisterDependancy<T, T>(DependancyLifetime.SCOPED);
-        }
-        public ContainerBuilder RegisterScoped<T>(Func<T> constructor)
-        {
-            return RegisterDependancy<T, T>(DependancyLifetime.SCOPED, constructor);
-        }
+            Dictionary<Type, DependencyBase> containerDictionary = new Dictionary<Type, DependencyBase>();
+            Dictionary<Type, DependencyRegistration> dependenciesToAdd = new Dictionary<Type, DependencyRegistration>();
 
-        public ContainerBuilder RegisterTransient<I, T>()
-        {
-            return RegisterDependancy<I, T>(DependancyLifetime.TRANSIENT);
-        }
-        public ContainerBuilder RegisterTransient<I, T>(Func<T> constructor)
-        {
-            return RegisterDependancy<I, T>(DependancyLifetime.TRANSIENT, constructor);
-        }
-        public ContainerBuilder RegisterTransient<T>()
-        {
-            return RegisterDependancy<T, T>(DependancyLifetime.TRANSIENT);
-        }
-        public ContainerBuilder RegisterTransient<T>(Func<T> constructor)
-        {
-            return RegisterDependancy<T, T>(DependancyLifetime.TRANSIENT, constructor);
-        }
-
-        private ContainerBuilder RegisterDependancy<I, T>(DependancyLifetime lifetime, Func<T>? constructor = null)
-        {
-            Type type = typeof(I);
-
-            if (!_registeredDependancies.ContainsKey(type))
+            foreach(DependencyRegistration registration in _containerConfiguration.RegisteredDependencies)
             {
-                _registeredDependancies[typeof(I)] = lifetime;
-                if (constructor != null)
+                if (registration.Constructor != null) 
                 {
-                    _constructors[type] = (container, scope) => constructor();
+                    containerDictionary.Add(registration.DependancyType, BuildDependency(registration));
                 }
                 else
                 {
-                    Func<Container, Scope?, object?> _constructor = CreateConstructor<T>();
-                    _constructors[type] = _constructor;
+                    dependenciesToAdd.Add(registration.DependancyType, registration);
                 }
-
-                return this;
             }
-
-            throw new DuplicateDependencyException(type);
+            
+            while(dependenciesToAdd.Count > 0) 
+            {
+                AddToContainerDictionaryDFS(dependenciesToAdd.First().Value,
+                                            dependenciesToAdd,
+                                            containerDictionary);
+            }
+            
+            return containerDictionary;
         }
 
-        private Func<Container, Scope?, object?> CreateConstructor<T>()
+        private DependencyBase BuildDependency(DependencyRegistration registration) 
         {
-            Type type = typeof(T);
-            Func<Container, Scope?, object?> constructor;
-            ConstructorInfo[] constructorInfos = type.GetConstructors();
-
-            if (type.IsValueType)
-            {                
-                constructor = (container, scope) => Activator.CreateInstance(type);
-            }
-            else if (type == typeof(string))
+            if(registration.Constructor == null)
             {
-                constructor = (container, scope) => null;
+                throw new InvalidOperationException();
+            }
+            return BuildDependency(registration.Lifetime, registration.Constructor);
+        }
+
+        private DependencyBase BuildDependency(DependencyLifetime lifetime, Func<object?> constructor)
+        {
+            switch (lifetime)
+            {
+                case DependencyLifetime.SCOPED:
+                    return new ScopedDependency(constructor);
+                case DependencyLifetime.SINGLTON:
+                    return new SingletonDependency(constructor);
+                case DependencyLifetime.TRANSIENT:
+                default:
+                    return new TransientDependency(constructor);
+            }
+        }
+
+        private void AddToContainerDictionaryDFS(DependencyRegistration registration, 
+                                                 Dictionary<Type, DependencyRegistration> dependenciesToAdd,
+                                                 Dictionary<Type, DependencyBase> containerDictionary)
+        {
+            Func<object?> constructor;
+            Type implementationType = registration.ImplementationType;
+            ConstructorInfo[] constructorInfos = implementationType.GetConstructors();
+
+            if (implementationType.IsValueType)
+            {                
+                constructor = () => Activator.CreateInstance(implementationType);
+            }
+            else if (implementationType == typeof(string))
+            {
+                constructor = () => null;
             }
             else if (constructorInfos.Length == 0)
             {
-                throw new DependencyConstructorException(type);
+                throw new DependencyConstructorException(implementationType);
             }
             else
             {
@@ -112,40 +95,61 @@ namespace Simplement.DI.CoreLib
                                                     .Where(ci => ci.IsPublic)
                                                     .OrderBy(ci => ci.GetParameters().Length)
                                                     .First();
-
-                ParameterInfo[] paramInfos = constructorInfo.GetParameters();
-
-                if (paramInfos.Length == 0)
+                
+                if (constructorInfo == null)
                 {
-                    constructor = (container, scope) => constructorInfo.Invoke(null);
+                    throw new DependencyConstructorException(implementationType);
                 }
-                else
-                {
-                    List<Type> parameterTypes = new List<Type>(paramInfos.Length);
 
-                    foreach (var paramInfo in paramInfos)
+                Type[] paramTypes = constructorInfo.GetParameters()
+                                                    .AsQueryable()
+                                                    .Select(pi => pi.ParameterType)
+                                                    .ToArray();
+
+                if (paramTypes.Length == 0)
+                {
+                    constructor = () => constructorInfo.Invoke(null);
+                }
+                else 
+                {
+                    Func<object?>[] paramGetters = new Func<object?>[paramTypes.Length];
+                    for(int i = 0; i < paramTypes.Length; i++) 
                     {
-                        parameterTypes.Add(paramInfo.ParameterType);
+                        Type paramType = paramTypes[i];
+                        if (!containerDictionary.ContainsKey(paramType))
+                        {
+                            if(!dependenciesToAdd.ContainsKey(paramType))
+                            {
+                                throw new UknownDependencyException(paramType);
+                            }
+                            AddToContainerDictionaryDFS(dependenciesToAdd[paramType], 
+                                                        dependenciesToAdd,
+                                                        containerDictionary);
+                        }
+
+                        paramGetters[i] = () => containerDictionary[paramType].Instance;
                     }
 
-                    constructor = (container, scope) =>
-                    {
-                        object[] parameters = new object[parameterTypes.Count];
-                        for (int i = 0; i < parameterTypes.Count; i++)
-                        {
-                            parameters[i] = container.Request(parameterTypes[i], scope);
+                    constructor = () => {
+                        object?[] parameters = new object[paramTypes.Length];
+                        for(int i = 0; i < paramTypes.Length; i++) {
+                            parameters[i] = paramGetters[i]();
                         }
                         return constructorInfo.Invoke(parameters);
                     };
-
                 }
             }
-            return constructor;
+
+            DependencyBase dependency = BuildDependency(registration.Lifetime, constructor);
+            containerDictionary.Add(registration.DependancyType, dependency);
+            dependenciesToAdd.Remove(registration.DependancyType);
         }
+
 
         public Container Build()
         {
-            return new Container(_registeredDependancies, _constructors);
+            Dictionary<Type, DependencyBase> containerDictionary = BuildContainerDictionary();
+            return new Container(containerDictionary);
         }
     }
 }

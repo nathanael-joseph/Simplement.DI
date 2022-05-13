@@ -6,10 +6,12 @@ using System.Diagnostics;
 Stopwatch stopwatch = new Stopwatch();
 
 Console.WriteLine("registering Stub with () => new Stub() ");
-Container container = ContainerFactory.CreateBuilder(builder =>
-{
-    builder.RegisterTransient<Stub>(() => new Stub());
-}).Build();
+Container container = ContainerFactory.CreateBuilder(config =>
+    {
+        config.RegisterTransient<Stub>(() => new Stub())
+              .RegisterTransient<DependantStup>()
+              .RegisterTransient<int>();
+    }).Build();
 
 const int AMOUNT = 100000;
 
@@ -35,7 +37,9 @@ Console.WriteLine("#############################################################
 Console.WriteLine("registering Stub with Invoke(null) ");
 container = ContainerFactory.CreateBuilder(builder =>
 {
-    builder.RegisterTransient<Stub>();
+    builder.RegisterTransient<Stub>()
+            .RegisterTransient<DependantStup>()
+            .RegisterTransient<int>();
 }).Build();
 
 
@@ -54,6 +58,24 @@ for (int i = 0; i < stubs.Length; i++)
 }
 stopwatch.Stop();
 Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} stubs with container.Request<Stub>() ...");
+
+DependantStup[] dstubs = new DependantStup[AMOUNT];
+stopwatch.Restart();
+for (int i = 0; i < stubs.Length; i++)
+{
+    dstubs[i] = new DependantStup(new Stub(), 0);
+}
+stopwatch.Stop();
+Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} DependantStups with new() ...");
+
+stopwatch.Restart();
+for (int i = 0; i < stubs.Length; i++)
+{
+    dstubs[i] = container.Request<DependantStup>();
+}
+stopwatch.Stop();
+Console.WriteLine($"{stopwatch.Elapsed} to create {AMOUNT} DependantStups with container.Request<Stub>() ...");
+
 
 stopwatch.Restart();
 for (int i = 0; i < stubs.Length; i++)

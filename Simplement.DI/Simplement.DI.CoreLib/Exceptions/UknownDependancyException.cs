@@ -1,8 +1,8 @@
 ﻿namespace Simplement.DI.CoreLib.Exceptions
 {
-    public class UknownDependancyException : InvalidOperationException
+    public class UknownDependencyException : InvalidOperationException
     {
-        public UknownDependancyException(Type t)
+        public UknownDependencyException(Type t)
             : base($"Unknown dependancy {t.Name} was requested. Ensrue the dependancy was registered correctly.")
         { }
     }

@@ -1,6 +1,6 @@
 ﻿namespace Simplement.DI.CoreLib.Enums
 {
-    internal enum DependancyLifetime
+    internal enum DependencyLifetime
     {
         SINGLTON,
         SCOPED,

@@ -8,15 +8,17 @@ namespace Simplement.DI.CoreLib
 {
     public static class ContainerFactory
     {
-        public static ContainerBuilder CreateBuilder()
+        public static ContainerBuilder CreateBuilder(ContainerConfiguration containerConfiguration)
         {
-            return new ContainerBuilder();
+            return new ContainerBuilder(containerConfiguration);
         }
 
-        public static ContainerBuilder CreateBuilder(Action<ContainerBuilder> configure)
+        public static ContainerBuilder CreateBuilder(Action<ContainerConfiguration> configure)
         {
-            ContainerBuilder builder = new ContainerBuilder();
-            configure(builder);
+            ContainerConfiguration configuration = new ContainerConfiguration();
+            configure(configuration);
+            ContainerBuilder builder = new ContainerBuilder(configuration);
+        
             return builder;
         }
 

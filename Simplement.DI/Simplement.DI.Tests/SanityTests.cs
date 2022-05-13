@@ -12,11 +12,11 @@ namespace Simplement.DI.Tests
         [Fact]
         public void AssertDefaultValueReturnedForValueTypes()
         {
-            Container container = ContainerFactory.CreateBuilder(builder =>
+            Container container = ContainerFactory.CreateBuilder(configuration =>
             {
-                builder.RegisterTransient<int>()
-                        .RegisterTransient<string>()
-                        .RegisterTransient<bool>();
+                configuration.RegisterTransient<int>()
+                            .RegisterTransient<string>()
+                            .RegisterTransient<bool>();
             }).Build();
 
             Assert.Equal(0, container.Request<int>());
