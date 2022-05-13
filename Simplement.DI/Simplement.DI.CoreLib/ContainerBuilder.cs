@@ -21,7 +21,7 @@ namespace Simplement.DI.CoreLib
 
         private Dictionary<Type, DependencyBase> BuildContainerDictionary()
         {
-            Dictionary<Type, DependencyBase> containerDictionary = new Dictionary<Type, DependencyBase>();
+            Dictionary<Type, DependencyBase> containerDictionary = new Dictionary<Type, DependencyBase>(_containerConfiguration.RegisteredDependencies.Count);
             Dictionary<Type, DependencyRegistration> dependenciesToAdd = new Dictionary<Type, DependencyRegistration>();
 
             foreach(DependencyRegistration registration in _containerConfiguration.RegisteredDependencies)

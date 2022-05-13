@@ -6,7 +6,7 @@ namespace Simplement.DI.CoreLib.Dependencies
     {
         internal override DependencyLifetime Lifetime => DependencyLifetime.TRANSIENT;
         
-        protected internal override object? Instance 
+        internal override object? Instance 
         { 
             get => Constructor(); 
         }

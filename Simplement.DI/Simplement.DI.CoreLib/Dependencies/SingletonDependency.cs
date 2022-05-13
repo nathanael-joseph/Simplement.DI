@@ -7,7 +7,7 @@ namespace Simplement.DI.CoreLib.Dependencies
         private readonly Lazy<object?> _instance; 
         internal override DependencyLifetime Lifetime => DependencyLifetime.SINGLTON;
         
-        protected internal override object? Instance 
+        internal override object? Instance 
         { 
             get => _instance.Value; 
         }
