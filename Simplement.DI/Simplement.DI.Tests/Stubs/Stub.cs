@@ -18,14 +18,38 @@ namespace Simplement.DI.Tests.Stubs
         }
     }
 
-    public class DependantStup
+    public class DependantStup 
     {
         private Stub _stub;
-
+        public string Name {get; set;}
 
         public DependantStup(Stub stub)
         {
             _stub = stub;
+            Name = "Dependant Stub";
+        }
+
+    }
+
+    public interface IDoer
+    {
+        public void DoStuff();
+    }
+
+    public class Doer : IDoer
+    {
+        public void DoStuff()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class DoerUser
+    {
+        private IDoer _doer;
+        public DoerUser(IDoer doer)
+        {
+            _doer = doer;
         }
     }
 }
