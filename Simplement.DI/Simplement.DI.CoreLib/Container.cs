@@ -18,19 +18,17 @@ namespace Simplement.DI.CoreLib
 
         internal object? Request(Type type)
         {
-            if (!_containerDictionary.ContainsKey(type))
+            if(_containerDictionary.TryGetValue(type, out DependencyBase? dependency))
             {
-                throw new UknownDependencyException(type);
-            }
-            
-            DependencyBase dependency = _containerDictionary[type];
+                if (IsScoped || dependency.Lifetime != DependencyLifetime.SCOPED)
+                {
+                    return dependency.Instance;
+                }
 
-            if (IsScoped || dependency.Lifetime != DependencyLifetime.SCOPED)
-            {
-                return dependency.Instance;
+                throw new InvalidScopedDependencyRequestException(type);
             }
 
-            throw new InvalidScopedDependencyRequestException(type);
+            throw new UknownDependencyException(type);
         }
         public T Request<T>()
         {
